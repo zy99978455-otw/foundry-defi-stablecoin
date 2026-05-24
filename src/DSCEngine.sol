@@ -53,13 +53,13 @@ contract DSCEngine is ReentrancyGuard {
     ///////////////////
     //     Errors    //
     ///////////////////
-    error DSCEngine_TokenAddressesAndPriceFeedAddressesAmountsDontMatch();
-    error DSCEngine_TokenAddressesAndPriceFeedAddressesMustBeSameLength();
-    error DSCEngine_NeedsMoreThanZero();
-    error DSCEngine_TokenNotAllowed(address token);
-    error DSCEngine_TransferFailed();
-    error DSCEngine_BreaksHealthFactor(uint256 healthFactor);
-    error DSCEngine_MintFailed();
+    error DSCEngine__TokenAddressesAndPriceFeedAddressesAmountsDontMatch();
+    error DSCEngine__TokenAddressesAndPriceFeedAddressesMustBeSameLength();
+    error DSCEngine__NeedsMoreThanZero();
+    error DSCEngine__TokenNotAllowed(address token);
+    error DSCEngine__TransferFailed();
+    error DSCEngine__BreaksHealthFactor(uint256 healthFactor);
+    error DSCEngine__MintFailed();
 
     /////////////////////////
     //   State Variables   //
@@ -88,14 +88,14 @@ contract DSCEngine is ReentrancyGuard {
     ///////////////////
     modifier moreThanZero(uint256 amount) {
         if(amount <= 0){
-            revert DSCEngine_NeedsMoreThanZero();
+            revert DSCEngine__NeedsMoreThanZero();
         }
         _;
     }
 
     modifier isAllowedToken(address token){
         if(s_priceFeeds[token] == address(0)){
-            revert DSCEngine_TokenNotAllowed(token);
+            revert DSCEngine__TokenNotAllowed(token);
         }
         _;
     }
@@ -106,7 +106,7 @@ contract DSCEngine is ReentrancyGuard {
 
     constructor(address[] memory tokenAddresses, address[] memory priceFeedAddresses, address dscAddress){
         if(tokenAddresses.length != priceFeedAddresses.length){
-            revert DSCEngine_TokenAddressesAndPriceFeedAddressesMustBeSameLength();
+            revert DSCEngine__TokenAddressesAndPriceFeedAddressesMustBeSameLength();
         }
 
         for(uint256 i=0;i<tokenAddresses.length;i++){
@@ -128,7 +128,7 @@ contract DSCEngine is ReentrancyGuard {
         emit CollateralDeposited(msg.sender, tokenCollateralAddress, amountCollateral);
         bool success = IERC20(tokenCollateralAddress).transferFrom(msg.sender, address(this), amountCollateral);
         if (!success){
-            revert DSCEngine_TransferFailed();
+            revert DSCEngine__TransferFailed();
         }
     }
 
@@ -143,7 +143,7 @@ contract DSCEngine is ReentrancyGuard {
 
         bool minted = i_dsc.mint(msg.sender, amountDscToMint);
         if (!minted){
-            revert DSCEngine_MintFailed();
+            revert DSCEngine__MintFailed();
         }
     }
 
@@ -175,7 +175,7 @@ contract DSCEngine is ReentrancyGuard {
     function _revertIfHealthFactorsBroken(address user) internal view {
         uint256 userHealthFactor = _healthFactor(user);
         if(userHealthFactor < MIN_HEALTH_FACTOR){
-            revert DSCEngine_BreaksHealthFactor(userHealthFactor);
+            revert DSCEngine__BreaksHealthFactor(userHealthFactor);
         }
     }
 
