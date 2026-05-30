@@ -46,10 +46,10 @@ contract MockV3Aggregator {
      * @dev 在测试脚本中调用它，可以瞬间模拟“以太坊闪崩”或“暴涨”的极端行情！
      */
     function updateAnswer(int256 _answer) public {
-        latestAnswer = _answer;                 // 更新最新价格
-        latestTimestamp = block.timestamp;      // 更新时间戳为当前区块时间
-        latestRound++;                          // 开启新的一个回合
-        
+        latestAnswer = _answer; // 更新最新价格
+        latestTimestamp = block.timestamp; // 更新时间戳为当前区块时间
+        latestRound++; // 开启新的一个回合
+
         // 把新数据归档到历史账本里
         getAnswer[latestRound] = _answer;
         getTimestamp[latestRound] = block.timestamp;
@@ -64,7 +64,7 @@ contract MockV3Aggregator {
         latestRound = _roundId;
         latestAnswer = _answer;
         latestTimestamp = _timestamp;
-        
+
         getAnswer[latestRound] = _answer;
         getTimestamp[latestRound] = _timestamp;
         getStartedAt[latestRound] = _startedAt;
@@ -93,11 +93,11 @@ contract MockV3Aggregator {
         returns (uint80 roundId, int256 answer, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound)
     {
         return (
-            uint80(latestRound),           // 当前的回合 ID
-            getAnswer[latestRound],        // 当前的假价格
-            getStartedAt[latestRound],     // 假开始时间
-            getTimestamp[latestRound],     // 假更新时间
-            uint80(latestRound)            // 回答的回合 ID
+            uint80(latestRound), // 当前的回合 ID
+            getAnswer[latestRound], // 当前的假价格
+            getStartedAt[latestRound], // 假开始时间
+            getTimestamp[latestRound], // 假更新时间
+            uint80(latestRound) // 回答的回合 ID
         );
     }
 

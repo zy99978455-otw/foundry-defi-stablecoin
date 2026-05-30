@@ -10,12 +10,9 @@ import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
  */
 contract ERC20Mock is ERC20 {
     // 构造函数：部署时立刻给某个地址印一笔初始资金
-    constructor(
-        string memory name,
-        string memory symbol,
-        address initialAccount,
-        uint256 initialBalance
-    ) ERC20(name, symbol) {
+    constructor(string memory name, string memory symbol, address initialAccount, uint256 initialBalance)
+        ERC20(name, symbol)
+    {
         _mint(initialAccount, initialBalance);
     }
 
