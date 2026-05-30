@@ -20,10 +20,10 @@ contract DSCEngineTest is Test {
     uint256 public constant AMOUNT_COLLATERAL = 10 ether;
     uint256 public constant STARTING_ERC20_BALANCE = 10 ether;
 
-    function setUp() public{
+    function setUp() public {
         deployer = new DeployDSC();
         (dsc, dsce, helperConfig) = deployer.run();
-        (ethUsdPriceFeed, , weth, , ) = helperConfig.activeNetworkConfig();
+        (ethUsdPriceFeed,, weth,,) = helperConfig.activeNetworkConfig();
     }
 
     /////////////////
@@ -45,7 +45,7 @@ contract DSCEngineTest is Test {
     function testRevertsIfCollateralZero() public {
         vm.startPrank(USER);
         ERC20Mock(weth).approve(address(dsce), AMOUNT_COLLATERAL);
-        
+
         vm.expectRevert(DSCEngine.DSCEngine__NeedsMoreThanZero.selector);
         dsce.depositCollateral(weth, 0);
         vm.stopPrank();
