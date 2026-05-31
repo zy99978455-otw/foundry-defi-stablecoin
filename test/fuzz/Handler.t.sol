@@ -78,4 +78,34 @@ contract Handler is Test {
         dsce.redeemCollateral(address(collateral), amountCollateral);
         vm.stopPrank();
     }
+
+
+    // -------------------------------------------------------------
+    // Fuzzer 机器人铸钱专用通道
+    // -------------------------------------------------------------
+    function mintDsc(uint256 amount) public {
+
+        // 1. 查账：去底层的 DSCEngine 查一下当前用户的资产情况
+        (uint256 totalDscMinted, uint256 collateralValueInUsd) = dsce.getAccountInformation(msg.sender);
+    
+        // 2. 算额度：根据 200% 超额抵押率，算出他还能印多少钱
+        // (注意：Solidity 里 uint 不能小于 0，在 0.8 版本后如果算出来是负数会自动 revert)
+        uint256 maxDscToMint = (collateralValueInUsd / 2) - totalDscMinted;
+        if(maxDscToMint <= 0){ // 修改：最好用 <= 0，如果是 0 就没必要印了
+            return; 
+        }
+
+        // 3. 拦截与清洗：把 Fuzzer 瞎填的金额，按死在 0 到 maxDscToMint 之间
+        amount = bound(amount, 0, maxDscToMint);
+        if(amount == 0){
+            return; // 取到 0 直接踢走，防止无意义底层报错
+        }
+
+        // 4. 真正发起印钞调用
+        vm.startPrank(msg.sender);
+        dsce.mintDsc(amount);
+        vm.stopPrank();
+    }
+
+
 }
