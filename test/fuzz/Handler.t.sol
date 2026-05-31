@@ -32,7 +32,7 @@ contract Handler is Test {
     function depositCollateral(uint256 collateralSeed, uint256 amountCollateral) public {
         // 1. 漏斗过滤一：从随机数里选出正确的代币 (WETH 或 WBTC)
         ERC20Mock collateral = _getCollateralFromSeed(collateralSeed);
-        
+
         // 2. 漏斗过滤二：把随机金额限制在 [1, MAX_DEPOSIT_SIZE] 之间
         amountCollateral = bound(amountCollateral, 1, MAX_DEPOSIT_SIZE);
 
@@ -40,7 +40,7 @@ contract Handler is Test {
         vm.startPrank(msg.sender);
         collateral.mint(msg.sender, amountCollateral);
         collateral.approve(address(dsce), amountCollateral);
-        
+
         // 4. 真正发起存款！现在这笔存款 100% 会成功，不会被 Revert 浪费掉
         dsce.depositCollateral(address(collateral), amountCollateral);
         vm.stopPrank();
@@ -78,6 +78,4 @@ contract Handler is Test {
         dsce.redeemCollateral(address(collateral), amountCollateral);
         vm.stopPrank();
     }
-
-
 }

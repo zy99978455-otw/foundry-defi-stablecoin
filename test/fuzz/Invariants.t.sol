@@ -18,7 +18,7 @@ contract Invariants is StdInvariant, Test {
     HelperConfig config;
     address weth;
     address wbtc;
-    
+
     Handler handler; // 声明 Handler 变量
 
     function setUp() external {
@@ -30,7 +30,7 @@ contract Invariants is StdInvariant, Test {
         handler = new Handler(dsce, dsc);
 
         // 💣 极其关键的一步！告诉 Fuzzer 机器人：你的攻击目标是 Handler，不要直接打 DSCEngine！
-        targetContract(address(handler)); 
+        targetContract(address(handler));
     }
 
     // 核心不变量：系统的总抵押物价值，必须永远大于等于铸造出来的 DSC 总价值
