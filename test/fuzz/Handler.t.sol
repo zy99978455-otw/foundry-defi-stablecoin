@@ -27,7 +27,7 @@ contract Handler is Test {
     }
 
     // -------------------------------------------------------------
-    // Fuzzer 机器人现在只能调这个函数，不能直接碰 DSCEngine 了！
+    // Fuzzer 机器人专用存钱通道
     // -------------------------------------------------------------
     function depositCollateral(uint256 collateralSeed, uint256 amountCollateral) public {
         // 1. 漏斗过滤一：从随机数里选出正确的代币 (WETH 或 WBTC)
@@ -55,7 +55,29 @@ contract Handler is Test {
         return wbtc;
     }
 
+    // -------------------------------------------------------------
+    // Fuzzer 机器人取钱专用通道
+    // -------------------------------------------------------------
+    function redeemCollateral(uint256 collateralSeed, uint256 amountCollateral) public {
+        // 1. 漏斗过滤一：获取正确的代币 (WETH 或 WBTC)
+        ERC20Mock collateral = _getCollateralFromSeed(collateralSeed);
 
+        // 2. 动态安检：去底层系统查一下，这个 Fuzzer 用户在这个币种上，到底存了多少钱？
+        uint256 maxCollateralToRedeem = dsce.getCollateralBalanceOfUser(address(collateral), msg.sender);
+
+        // 3. 漏斗过滤二：把取钱金额强制限制在 [0, 用户真实余额] 之间
+        amountCollateral = bound(amountCollateral, 0, maxCollateralToRedeem);
+
+        // 4. 终极拦截：如果余额是 0，或者刚好随机到了 0，直接踢走，不发起底层调用！
+        if (amountCollateral == 0) {
+            return;
+        }
+
+        // 5. 真正发起赎回
+        vm.startPrank(msg.sender);
+        dsce.redeemCollateral(address(collateral), amountCollateral);
+        vm.stopPrank();
+    }
 
 
 }
