@@ -6,6 +6,8 @@ import {DSCEngine} from "../../src/DSCEngine.sol";
 import {DecentralizedStableCoin} from "../../src/DecentralizedStableCoin.sol";
 import {ERC20Mock} from "../mocks/ERC20Mock.sol";
 
+import {MockV3Aggregator} from "../mocks/MockV3Aggregator.sol";
+
 contract Handler is Test {
     DSCEngine dsce;
     DecentralizedStableCoin dsc;
@@ -13,8 +15,17 @@ contract Handler is Test {
     ERC20Mock weth;
     ERC20Mock wbtc;
 
+    // 声明全局的喂价预言机变量
+    MockV3Aggregator public ethUsdPriceFeed;
+
     // 限制单次最大存款金额，防止 Fuzzer 生成太大的数字导致溢出崩溃
     uint256 MAX_DEPOSIT_SIZE = type(uint96).max;
+
+    // 加入幽灵变量，用来在测试结果里看我们到底成功印了几次钞
+    uint256 public timesMintIsCalled;
+
+    // 建立 VIP 花名册，只有存过钱的人才能进来
+    address[] public usersWithCollateralDeposited;
 
     constructor(DSCEngine _dsce, DecentralizedStableCoin _dsc) {
         dsce = _dsce;
@@ -24,6 +35,8 @@ contract Handler is Test {
         address[] memory collateralTokens = dsce.getCollateralTokens();
         weth = ERC20Mock(collateralTokens[0]);
         wbtc = ERC20Mock(collateralTokens[1]);
+
+        ethUsdPriceFeed = MockV3Aggregator(dsce.getCollateralTokenPriceFeed(address(weth)));
     }
 
     // -------------------------------------------------------------
@@ -44,6 +57,9 @@ contract Handler is Test {
         // 4. 真正发起存款！现在这笔存款 100% 会成功，不会被 Revert 浪费掉
         dsce.depositCollateral(address(collateral), amountCollateral);
         vm.stopPrank();
+
+        // 5. 只要存钱成功，就把真实的 msg.sender 加入花名册！
+        usersWithCollateralDeposited.push(msg.sender);
     }
 
     // --- Helper Functions ---
@@ -82,27 +98,43 @@ contract Handler is Test {
     // -------------------------------------------------------------
     // Fuzzer 机器人铸钱专用通道
     // -------------------------------------------------------------
-    function mintDsc(uint256 amount) public {
-        // 1. 查账：去底层的 DSCEngine 查一下当前用户的资产情况
-        (uint256 totalDscMinted, uint256 collateralValueInUsd) = dsce.getAccountInformation(msg.sender);
-
-        // 2. 算额度：根据 200% 超额抵押率，算出他还能印多少钱
-        // (注意：Solidity 里 uint 不能小于 0，在 0.8 版本后如果算出来是负数会自动 revert)
-        uint256 maxDscToMint = (collateralValueInUsd / 2) - totalDscMinted;
-        if (maxDscToMint <= 0) {
-            // 修改：最好用 <= 0，如果是 0 就没必要印了
+    function mintDsc(uint256 amount, uint256 addressSeed) public {
+        if (usersWithCollateralDeposited.length == 0) {
             return;
         }
 
-        // 3. 拦截与清洗：把 Fuzzer 瞎填的金额，按死在 0 到 maxDscToMint 之间
+        address sender = usersWithCollateralDeposited[addressSeed % usersWithCollateralDeposited.length];
+
+        // 真实 sender，
+        (uint256 totalDscMinted, uint256 collateralValueInUsd) = dsce.getAccountInformation(sender);
+
+        uint256 maxDscToMint = (collateralValueInUsd / 2) - totalDscMinted;
+        if (maxDscToMint <= 0) {
+            return;
+        }
+
         amount = bound(amount, 0, maxDscToMint);
         if (amount == 0) {
             return; // 取到 0 直接踢走，防止无意义底层报错
         }
 
-        // 4. 真正发起印钞调用
-        vm.startPrank(msg.sender);
+        // 真正发起印钞调用
+        vm.startPrank(sender);
         dsce.mintDsc(amount);
         vm.stopPrank();
+
+        timesMintIsCalled++;
     }
+
+    // -------------------------------------------------------------
+    // 💣 预言机崩盘模拟器 (价格操纵通道)
+    // -------------------------------------------------------------
+    // 教程指出：这个函数暴露出系统无法抵御极端价格闪崩的物理弱点。
+    // 如果取消注释，你的不变量测试将 100% 失败 (爆仓报错)。
+    // 作为目前的妥协，我们先把它写出来并注释掉，表示我们“已知此系统性风险”。
+
+    // function updateCollateralPrice(uint96 newPrice) public {
+    //     int256 newPriceInt = int256(uint256(newPrice));
+    //     ethUsdPriceFeed.updateAnswer(newPriceInt);
+    // }
 }

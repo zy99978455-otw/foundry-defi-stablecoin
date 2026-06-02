@@ -51,6 +51,8 @@ contract Invariants is StdInvariant, Test {
         console.log("WBTC Value: ", wbtcValue);
         console.log("Total Supply: ", totalSupply);
 
+        console.log("Times Mint Called: ", handler.timesMintIsCalled());
+
         // 4. 断言：抵押物美元总价值 >= 负债总量
         assert(wethValue + wbtcValue >= totalSupply);
     }
