@@ -30,7 +30,7 @@ contract DSCEngineTest is Test {
     // Price Tests //
     /////////////////
 
-    function testGetUsdValue() public {
+    function testGetUsdValue() public view {
         // 15e18 * 2,000/ETH = 30,000e18
         uint256 ethAmount = 15e18;
         uint256 expectedUsd = 30000e18;
